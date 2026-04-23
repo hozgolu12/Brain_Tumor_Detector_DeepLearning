@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "node:crypto";
-import { desc, sql } from "drizzle-orm";
+import { desc } from "drizzle-orm";
 import { db, predictionsTable } from "@workspace/db";
 import {
   PredictTumorBody,
@@ -9,7 +9,7 @@ import {
   GetPredictionStatsResponse,
   GetModelInfoResponse,
 } from "@workspace/api-zod";
-import { runInference, getModelInfo, CLASSES } from "../lib/model";
+import { runInference, getModelInfo, CLASSES, ModelUnavailableError } from "../lib/model";
 
 const router: IRouter = Router();
 
@@ -21,7 +21,16 @@ router.post("/predict", async (req, res) => {
   }
   const { imageBase64, filename } = parsed.data;
 
-  const result = await runInference(imageBase64, filename);
+  let result;
+  try {
+    result = await runInference(imageBase64, filename);
+  } catch (err) {
+    if (err instanceof ModelUnavailableError) {
+      res.status(503).json({ error: err.message });
+      return;
+    }
+    throw err;
+  }
   const id = randomUUID();
   const mime =
     filename.toLowerCase().endsWith(".png")
@@ -100,7 +109,6 @@ router.get("/predictions/stats", async (_req, res) => {
   const tumorDetected = total - noTumor;
   const since = Date.now() - 24 * 60 * 60 * 1000;
   const last24h = rows.filter((r) => r.createdAt.getTime() >= since).length;
-  void sql; // avoid unused import warning
 
   const payload = GetPredictionStatsResponse.parse({
     total,
@@ -113,8 +121,8 @@ router.get("/predictions/stats", async (_req, res) => {
   res.json(payload);
 });
 
-router.get("/model/info", (_req, res) => {
-  const payload = GetModelInfoResponse.parse(getModelInfo());
+router.get("/model/info", async (_req, res) => {
+  const payload = GetModelInfoResponse.parse(await getModelInfo());
   res.json(payload);
 });
 

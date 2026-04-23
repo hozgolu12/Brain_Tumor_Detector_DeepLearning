@@ -10,7 +10,7 @@ export interface FileUploadProps {
   isLoading?: boolean;
 }
 
-export function FileUpload({ onFileSelect, accept = "image/jpeg, image/png", maxSizeMB = 10, isLoading }: FileUploadProps) {
+export function FileUpload({ onFileSelect, accept = "image/jpeg, image/png", maxSizeMB = 25, isLoading }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
