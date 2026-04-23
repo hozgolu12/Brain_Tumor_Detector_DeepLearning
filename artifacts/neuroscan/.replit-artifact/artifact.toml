@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "NeuroScan - Brain Tumor Detection"
+version = "1.0.0"
+id = "artifacts/neuroscan"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23387
+
+[services.development]
+run = "pnpm --filter @workspace/neuroscan run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/neuroscan", "run", "build" ]
+publicDir = "artifacts/neuroscan/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23387"
+BASE_PATH = "/"

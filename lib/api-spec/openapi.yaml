@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: NeuroScan brain tumor detection API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: predictions
+    description: Brain tumor prediction operations
 paths:
   /healthz:
     get:
@@ -24,6 +26,66 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /predict:
+    post:
+      operationId: predictTumor
+      tags: [predictions]
+      summary: Run brain tumor detection on an MRI scan
+      description: Accepts a base64-encoded MRI image and returns tumor classification with confidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PredictRequest"
+      responses:
+        "200":
+          description: Prediction result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Prediction"
+  /predictions:
+    get:
+      operationId: listPredictions
+      tags: [predictions]
+      summary: List recent predictions
+      description: Returns the most recent predictions, newest first
+      responses:
+        "200":
+          description: List of predictions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Prediction"
+  /predictions/stats:
+    get:
+      operationId: getPredictionStats
+      tags: [predictions]
+      summary: Aggregated stats for all predictions
+      description: Returns dashboard summary stats (totals, class breakdown, average confidence)
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PredictionStats"
+  /model/info:
+    get:
+      operationId: getModelInfo
+      tags: [predictions]
+      summary: Get information about the loaded model
+      description: Returns metadata about the currently loaded detection model
+      responses:
+        "200":
+          description: Model info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelInfo"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +95,121 @@ components:
           type: string
       required:
         - status
-
+    PredictRequest:
+      type: object
+      properties:
+        imageBase64:
+          type: string
+          description: Base64-encoded MRI scan image (without data URI prefix)
+        filename:
+          type: string
+          description: Original filename of the uploaded image
+      required:
+        - imageBase64
+        - filename
+    ClassProbability:
+      type: object
+      properties:
+        label:
+          type: string
+        probability:
+          type: number
+      required:
+        - label
+        - probability
+    Prediction:
+      type: object
+      properties:
+        id:
+          type: string
+        filename:
+          type: string
+        predictedClass:
+          type: string
+          description: Predicted tumor class (e.g. glioma, meningioma, pituitary, no_tumor)
+        confidence:
+          type: number
+          description: Confidence score between 0 and 1
+        probabilities:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClassProbability"
+        imageDataUrl:
+          type: string
+          description: Data URL of the uploaded image for display
+        createdAt:
+          type: string
+          format: date-time
+        modelVersion:
+          type: string
+        processingTimeMs:
+          type: number
+      required:
+        - id
+        - filename
+        - predictedClass
+        - confidence
+        - probabilities
+        - imageDataUrl
+        - createdAt
+        - modelVersion
+        - processingTimeMs
+    ClassCount:
+      type: object
+      properties:
+        label:
+          type: string
+        count:
+          type: integer
+      required:
+        - label
+        - count
+    PredictionStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        averageConfidence:
+          type: number
+        tumorDetected:
+          type: integer
+        noTumor:
+          type: integer
+        byClass:
+          type: array
+          items:
+            $ref: "#/components/schemas/ClassCount"
+        last24h:
+          type: integer
+      required:
+        - total
+        - averageConfidence
+        - tumorDetected
+        - noTumor
+        - byClass
+        - last24h
+    ModelInfo:
+      type: object
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        classes:
+          type: array
+          items:
+            type: string
+        inputSize:
+          type: string
+        loaded:
+          type: boolean
+        backend:
+          type: string
+          description: Inference backend (e.g. tensorflow-python, mock)
+      required:
+        - name
+        - version
+        - classes
+        - inputSize
+        - loaded
+        - backend
