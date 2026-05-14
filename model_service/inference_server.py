@@ -34,7 +34,13 @@ import base64
 import io
 import os
 os.environ["TF_USE_LEGACY_KERAS"] = "1"
+os.environ["TF_NUM_INTEROP_THREADS"] = "1"
+os.environ["TF_NUM_INTRAOP_THREADS"] = "1"
 import time
+import tensorflow as tf
+
+tf.config.threading.set_inter_op_parallelism_threads(1)
+tf.config.threading.set_intra_op_parallelism_threads(1)
 
 import numpy as np
 from flask import Flask, jsonify, request
