@@ -174,7 +174,7 @@ export default function History() {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-sm font-medium text-muted-foreground mb-1">File Name</h3>
-                  <p className="font-medium">{selectedPrediction.filename}</p>
+                  <p className="font-medium break-all">{selectedPrediction.filename}</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
