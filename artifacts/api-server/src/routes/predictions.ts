@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { randomUUID } from "node:crypto";
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db, predictionsTable } from "@workspace/db";
 import {
   PredictTumorBody,
@@ -124,6 +124,18 @@ router.get("/predictions/stats", async (_req, res) => {
 router.get("/model/info", async (_req, res) => {
   const payload = GetModelInfoResponse.parse(await getModelInfo());
   res.json(payload);
+});
+
+router.delete("/predictions", async (_req, res) => {
+  console.log("DELETE /predictions hit - clearing all history");
+  await db.delete(predictionsTable);
+  res.status(204).end();
+});
+
+router.delete("/predictions/:id", async (req, res) => {
+  console.log(`DELETE /predictions/${req.params.id} hit - deleting specific scan`);
+  await db.delete(predictionsTable).where(eq(predictionsTable.id, req.params.id));
+  res.status(204).end();
 });
 
 export default router;

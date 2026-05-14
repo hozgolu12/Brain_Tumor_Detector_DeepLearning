@@ -1,17 +1,54 @@
 import { useState, useMemo } from "react";
-import { useListPredictions, getListPredictionsQueryKey } from "@workspace/api-client-react";
+import { useListPredictions, getListPredictionsQueryKey, useClearPredictions, useDeletePrediction, getGetPredictionStatsQueryKey } from "@workspace/api-client-react";
 import { format } from "date-fns";
-import { Search, Filter, AlertTriangle, FileImage, ShieldCheck } from "lucide-react";
+import { Search, Filter, AlertTriangle, FileImage, ShieldCheck, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function History() {
+  const queryClient = useQueryClient();
   const { data: predictions, isLoading } = useListPredictions({ query: { queryKey: getListPredictionsQueryKey() } });
+  const clearMutation = useClearPredictions();
+  const deleteMutation = useDeletePrediction();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPrediction, setSelectedPrediction] = useState<any | null>(null);
+
+  const handleClearAll = () => {
+    if (confirm("Are you sure you want to clear all history? This cannot be undone.")) {
+      clearMutation.mutate(undefined, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPredictionsQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetPredictionStatsQueryKey() });
+          toast.success("History cleared successfully");
+        },
+        onError: (err) => {
+          console.error("Clear all failed:", err);
+          toast.error("Failed to clear history. See console for details.");
+        }
+      });
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    deleteMutation.mutate({ id }, {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListPredictionsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetPredictionStatsQueryKey() });
+        setSelectedPrediction(null);
+        toast.success("Scan deleted successfully");
+      },
+      onError: (err) => {
+        console.error("Delete failed for ID " + id + ":", err);
+        toast.error("Failed to delete scan. See console for details.");
+      }
+    });
+  };
 
   const filteredPredictions = useMemo(() => {
     if (!predictions) return [];
@@ -31,14 +68,22 @@ export default function History() {
           <h1 className="text-3xl font-bold tracking-tight">Scan History</h1>
           <p className="text-muted-foreground mt-1">Review past predictions and analyses.</p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Search by filename or class..." 
-            className="pl-9"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search by filename or class..." 
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          {predictions && predictions.length > 0 && (
+            <Button variant="destructive" onClick={handleClearAll} disabled={clearMutation.isPending}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              Clear All
+            </Button>
+          )}
         </div>
       </div>
 
@@ -108,7 +153,15 @@ export default function History() {
       <Dialog open={!!selectedPrediction} onOpenChange={(o) => !o && setSelectedPrediction(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Scan Details</DialogTitle>
+            <div className="flex items-center justify-between w-full">
+              <DialogTitle>Scan Details</DialogTitle>
+              {selectedPrediction && (
+                <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedPrediction.id)} disabled={deleteMutation.isPending} className="mr-6">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </Button>
+              )}
+            </div>
           </DialogHeader>
           {selectedPrediction && (
             <div className="grid md:grid-cols-2 gap-6 pt-4">

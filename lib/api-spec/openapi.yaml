@@ -60,6 +60,31 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Prediction"
+    delete:
+      operationId: clearPredictions
+      tags: [predictions]
+      summary: Clear all predictions
+      description: Deletes all scan history
+      responses:
+        "204":
+          description: Successfully cleared all history
+  /predictions/{id}:
+    delete:
+      operationId: deletePrediction
+      tags: [predictions]
+      summary: Delete a specific prediction
+      description: Removes a single scan from history by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Successfully deleted the scan
+        "404":
+          description: Scan not found
   /predictions/stats:
     get:
       operationId: getPredictionStats

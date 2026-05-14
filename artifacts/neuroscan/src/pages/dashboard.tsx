@@ -80,7 +80,7 @@ export default function Dashboard() {
           <CardContent>
             {statsLoading ? <Skeleton className="h-7 w-20" /> : (
               <>
-                <div className="text-2xl font-bold">{stats?.total.toLocaleString() ?? 0}</div>
+                <div className="text-2xl font-bold">{(stats?.total || 0).toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground mt-1">+{stats?.last24h ?? 0} in last 24h</p>
               </>
             )}
@@ -110,7 +110,7 @@ export default function Dashboard() {
           <CardContent>
             {statsLoading ? <Skeleton className="h-7 w-20" /> : (
               <>
-                <div className="text-2xl font-bold">{stats?.tumorDetected.toLocaleString() ?? 0}</div>
+                <div className="text-2xl font-bold">{(stats?.tumorDetected || 0).toLocaleString()}</div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {stats && stats.total > 0 ? ((stats.tumorDetected / stats.total) * 100).toFixed(1) : 0}% detection rate
                 </p>

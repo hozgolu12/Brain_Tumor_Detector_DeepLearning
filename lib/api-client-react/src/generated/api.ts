@@ -273,6 +273,173 @@ export function useListPredictions<
 }
 
 /**
+ * Deletes all scan history
+ * @summary Clear all predictions
+ */
+export const getClearPredictionsUrl = () => {
+  return `/api/predictions`;
+};
+
+export const clearPredictions = async (
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getClearPredictionsUrl(), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getClearPredictionsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearPredictions>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof clearPredictions>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["clearPredictions"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof clearPredictions>>,
+    void
+  > = () => {
+    return clearPredictions(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ClearPredictionsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof clearPredictions>>
+>;
+
+export type ClearPredictionsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Clear all predictions
+ */
+export const useClearPredictions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof clearPredictions>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof clearPredictions>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getClearPredictionsMutationOptions(options));
+};
+
+/**
+ * Removes a single scan from history by its ID
+ * @summary Delete a specific prediction
+ */
+export const getDeletePredictionUrl = (id: string) => {
+  return `/api/predictions/${id}`;
+};
+
+export const deletePrediction = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeletePredictionUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeletePredictionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePrediction>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deletePrediction>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deletePrediction"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deletePrediction>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deletePrediction(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeletePredictionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deletePrediction>>
+>;
+
+export type DeletePredictionMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete a specific prediction
+ */
+export const useDeletePrediction = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deletePrediction>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deletePrediction>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeletePredictionMutationOptions(options));
+};
+
+/**
  * Returns dashboard summary stats (totals, class breakdown, average confidence)
  * @summary Aggregated stats for all predictions
  */

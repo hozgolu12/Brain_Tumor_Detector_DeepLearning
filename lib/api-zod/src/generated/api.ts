@@ -78,6 +78,14 @@ export const ListPredictionsResponseItem = zod.object({
 export const ListPredictionsResponse = zod.array(ListPredictionsResponseItem);
 
 /**
+ * Removes a single scan from history by its ID
+ * @summary Delete a specific prediction
+ */
+export const DeletePredictionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
  * Returns dashboard summary stats (totals, class breakdown, average confidence)
  * @summary Aggregated stats for all predictions
  */
