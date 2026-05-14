@@ -1,7 +1,8 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { BrainCircuit, LayoutDashboard, ScanLine, History, Cpu, Info } from "lucide-react";
+import { BrainCircuit, LayoutDashboard, ScanLine, History, Cpu, Info, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 
 interface LayoutProps {
   children: ReactNode;
@@ -69,7 +70,52 @@ export function Layout({ children }: LayoutProps) {
         {/* Mobile Header */}
         <header className="md:hidden border-b bg-card p-4 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
-            <BrainCircuit className="w-5 h-5 text-primary" />
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="w-5 h-5" />
+                  <span className="sr-only">Toggle Menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 p-0">
+                <div className="p-6 flex items-center gap-3 border-b">
+                  <div className="bg-primary p-2 rounded-lg">
+                    <BrainCircuit className="w-6 h-6 text-primary-foreground" />
+                  </div>
+                  <SheetTitle className="font-bold text-xl tracking-tight m-0 p-0">NeuroScan</SheetTitle>
+                </div>
+                
+                <div className="px-4 py-4">
+                  <Link href="/scan">
+                    <Button className="w-full justify-start gap-2 shadow-sm" size="lg">
+                      <ScanLine className="w-4 h-4" />
+                      Perform Scan
+                    </Button>
+                  </Link>
+                </div>
+
+                <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+                  {navItems.map((item) => {
+                    const isActive = location === item.href;
+                    return (
+                      <Link key={item.href} href={item.href}>
+                        <span
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors cursor-pointer text-sm font-medium ${
+                            isActive
+                              ? "bg-primary/10 text-primary"
+                              : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                          }`}
+                        >
+                          <item.icon className={`w-4 h-4 ${isActive ? "text-primary" : ""}`} />
+                          {item.label}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <BrainCircuit className="w-5 h-5 text-primary ml-2" />
             <span className="font-bold text-lg">NeuroScan</span>
           </div>
           <Link href="/scan">
