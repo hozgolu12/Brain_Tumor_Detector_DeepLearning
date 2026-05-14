@@ -188,7 +188,7 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {recent.slice(0, 4).map((scan) => (
                   <div key={scan.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => setLocation('/history')}>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="w-10 h-10 rounded bg-muted overflow-hidden shrink-0">
                         {scan.imageDataUrl ? (
                           <img src={scan.imageDataUrl} alt="Scan thumbnail" className="w-full h-full object-cover" />
@@ -196,8 +196,8 @@ export default function Dashboard() {
                           <FileImage className="w-5 h-5 m-2.5 text-muted-foreground" />
                         )}
                       </div>
-                      <div>
-                        <p className="text-sm font-medium leading-none line-clamp-1">{scan.filename}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-none truncate">{scan.filename}</p>
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(scan.createdAt), { addSuffix: true })}
                         </p>
