@@ -33,41 +33,32 @@ Response format:
 import base64
 import io
 import os
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
-os.environ["TF_NUM_INTEROP_THREADS"] = "1"
-os.environ["TF_NUM_INTRAOP_THREADS"] = "1"
 import time
-import tensorflow as tf
-
-tf.config.threading.set_inter_op_parallelism_threads(1)
-tf.config.threading.set_intra_op_parallelism_threads(1)
 
 import numpy as np
 from flask import Flask, jsonify, request
 from PIL import Image
-import keras
-from tensorflow.keras.models import load_model  # type: ignore
-from keras.applications.mobilenet_v2 import preprocess_input 
 
-# Patch Keras Dense layer to ignore unsupported legacy 'quantization_config' argument
-original_dense = keras.layers.Dense.from_config
-@classmethod
-def patched_from_config(cls, config):
-    if "quantization_config" in config:
-        del config["quantization_config"]
-    return original_dense(config)
-keras.layers.Dense.from_config = patched_from_config
+try:
+    import tflite_runtime.interpreter as tflite
+except ImportError:
+    # Fallback to tf.lite if tflite_runtime is not installed
+    import tensorflow.lite as tflite
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_MODEL_PATH = os.path.join(BASE_DIR, "MobileNet.h5")
+DEFAULT_MODEL_PATH = os.path.join(BASE_DIR, "MobileNet.tflite")
 MODEL_PATH = os.environ.get("MODEL_PATH", DEFAULT_MODEL_PATH)
 MODEL_VERSION = os.environ.get("MODEL_VERSION", "custom-v1")
 INPUT_SIZE = (224, 224)  # change to match your model's expected input
 CLASS_LABELS = ["glioma", "meningioma", "no_tumor", "pituitary"]
 
-print(f"Loading model from {MODEL_PATH} ...")
-model = load_model(MODEL_PATH)
-print("Model loaded.")
+print(f"Loading TFLite model from {MODEL_PATH} ...")
+interpreter = tflite.Interpreter(model_path=MODEL_PATH, num_threads=1)
+interpreter.allocate_tensors()
+print("TFLite Model loaded.")
+
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 app = Flask(__name__)
 
@@ -75,7 +66,8 @@ app = Flask(__name__)
 def preprocess(image_bytes: bytes) -> np.ndarray:
     img = Image.open(io.BytesIO(image_bytes)).convert("RGB").resize(INPUT_SIZE)
     arr = np.asarray(img, dtype=np.float32)
-    arr = preprocess_input(arr)  # scales to [-1, 1] as MobileNetV2 expects
+    # MobileNetV2 preprocess_input scales pixels to [-1, 1]
+    arr = (arr / 127.5) - 1.0
     return np.expand_dims(arr, axis=0)
 
 @app.post("/predict")
@@ -86,7 +78,12 @@ def predict():
 
     start = time.time()
     x = preprocess(image_bytes)
-    preds = model.predict(x, verbose=0)[0]
+    
+    # Run TFLite inference
+    interpreter.set_tensor(input_details[0]['index'], x)
+    interpreter.invoke()
+    preds = interpreter.get_tensor(output_details[0]['index'])[0]
+    
     print(f"Prediction: {preds}")
     elapsed_ms = int((time.time() - start) * 1000)
 
@@ -95,14 +92,14 @@ def predict():
         for label, p in zip(CLASS_LABELS, preds)
     ]
     best = max(probabilities, key=lambda x: x["probability"])
-    print(f"Predictioin: {best}")
+    print(f"Prediction: {best}")
     return jsonify(
         {
             "predictedClass": best["label"],
             "confidence": best["probability"],
             "probabilities": probabilities,
             "modelVersion": MODEL_VERSION,
-            "backend": "MobileNetV2-python",
+            "backend": "tflite-python",
             "processingTimeMs": elapsed_ms,
         }
     )
