@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://your-api-server-url.onrender.com/api/$1"
+      "destination": "https://neuroscan-api-e83r.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
